@@ -114,44 +114,6 @@ else:
 
 # END PARAMETERS
 
-logging.info("Loading dataset...")
-
-data = DATASET(DATASET_FOLDER)
-
-train_doc_str, train_answer_str = data.load_train()
-test_doc_str, test_answer_str = data.load_test()
-val_doc_str, val_answer_str = data.load_validation()
-
-train_doc, train_answer = tk.tokenize_set(train_doc_str, train_answer_str, tokenizer)
-test_doc, test_answer = tk.tokenize_set(test_doc_str, test_answer_str, tokenizer)
-val_doc, val_answer = tk.tokenize_set(val_doc_str, val_answer_str, tokenizer)
-
-# Sanity check
-# logging.info("Sanity check: %s",metrics.precision(test_answer,test_answer))
-
-logging.info("Dataset loaded. Preprocessing data...")
-
-train_x, train_y, test_x, test_y, val_x, val_y, embedding_matrix = preprocessing. \
-    prepare_sequential(train_doc, train_answer, test_doc, test_answer, val_doc, val_answer,
-                       max_document_length=MAX_DOCUMENT_LENGTH,
-                       max_vocabulary_size=MAX_VOCABULARY_SIZE,
-                       embeddings_size=EMBEDDINGS_SIZE,
-                       stem_test=STEM_TEST)
-
-# weigh training examples: everything that's not class 0 (not kp)
-# gets a heavier score
-from sklearn.utils import class_weight
-
-train_y_weights = np.argmax(train_y, axis=2)
-train_y_weights = np.reshape(class_weight.compute_sample_weight('balanced', train_y_weights.flatten()),
-                             np.shape(train_y_weights))
-
-logging.info("Data preprocessing complete.")
-logging.info("Maximum possible recall: %s",
-             metrics.recall(test_answer,
-                            postprocessing.get_words(test_doc, postprocessing.undo_sequential(test_y)),
-                            STEM_MODE))
-
 if not SAVE_MODEL or not os.path.isfile(MODEL_PATH):
 
     logging.debug("Building the network...")
